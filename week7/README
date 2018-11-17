@@ -1,0 +1,30 @@
+All the source codes have already been compiled
+
+1、For 17.1:
+java Seventeen ../pride-and-prejudice.txt
+You could recompile it by using:
+javac Seventeen.java
+
+2、For 19.1 and 19.4
+
+ 1) conf.txt is the configuration file, you could change the jar name and file name
+    from 1 to 2 or from 2 to 1 to using different version of methods,For convenience, 
+    each version of methods will print its version if be called.
+
+ 2)All plugins are in plugins directory, and they have been compiled and packaged to jar.
+  myInterface.jar includes: TFPrint,TFFreqs,TFWords interfaces
+  plugin1.jar includes: Words1, Freqs1, Print2
+  plugin2.jar includes: Words2, Freqs2, Print2
+  For conveinence, I have deleted all the .class files, if you want to recompile all the things
+  just run the compile.sh file in plugins directory
+ 
+ 3) To run Nineteen(19.1+19.4)
+    java -cp ./plugins/myInterface.jar:./ Nineteen ../pride-and-prejudice.txt
+    
+    To recompile Nineteen.java
+    javac -cp ./plugins/myInterface.jar Nineteen.java
+ 
+ 3、For 18.1
+ It's based on asepect orientied programming
+ run it by using:
+ node Eigtheen.js ../pride-and-prejudice.txt
