@@ -1,0 +1,4 @@
+jarFile:plugins/plugin2.jar
+Class for extracting words:Words2
+Class for getting frequencies:Freqs2
+Class for printing:Print2
