@@ -31,12 +31,13 @@ public class Nineteen {
         Object oWords = cWords.getConstructor().newInstance();
         Object oFreqs = cFreqs.getConstructor().newInstance();
         Object oPrint = cPrint.getConstructor().newInstance();
-        //Use Interface to call the methods just as what shows on ppt
-        TFWords tfWords = (TFWords) oWords;
-        TFFreqs tfFreqs = (TFFreqs) oFreqs;
-        TFPrint tfPrint = (TFPrint) oPrint;
+        //Use reflection to call the methods 
+        Method tfWords = cWords.getMethod("extractWords", String.class);
+        Method tfFreqs = cFreqs.getMethod("top25", List.class);
+        Method tfPrint = cPrint.getMethod("doPrint", HashMap.class);
         //call methods
-        tfPrint.doPrint(tfFreqs.top25(tfWords.extractWords(args[0])));
+        tfPrint.invoke(oPrint, tfFreqs.invoke(oFreqs, tfWords.invoke(oWords, "../pride-and-prejudice.txt")));
     }
-
 }
+
+

@@ -1,7 +1,7 @@
 import java.util.HashMap;
 import java.util.Map;
 
-public class Print2 implements TFPrint{
+public class Print2{
     public void doPrint(HashMap<String, Integer> wordFreqs) {
         int i = 0;
         System.out.println("This is version2 Print");

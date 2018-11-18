@@ -1,6 +1,6 @@
 import java.util.*;
 import java.io.*;
-public class Words1 implements TFWords {
+public class Words1{
     List<String> words;
     public Words1() {
         words = new LinkedList<>();

@@ -2,7 +2,7 @@ import java.util.*;
 import static java.util.stream.Collectors.*;
 import static java.util.Map.Entry.*;
 
-public class Freqs1 implements TFFreqs {
+public class Freqs1{
     HashMap<String,Integer> wordFreqs;
     public Freqs1(){
         wordFreqs = new HashMap<>();

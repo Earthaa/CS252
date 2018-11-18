@@ -4,13 +4,12 @@ import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-public class Words2 implements TFWords {
+public class Words2{
 
     List<String> words;
     public Words2() {
         words = new LinkedList<>();
     }
-    @Override
     public List<String> extractWords(String path) throws Exception {
         System.out.println("This is Version2 extractWords Function");
         File file = new File(path);
