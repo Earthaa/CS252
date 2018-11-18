@@ -13,8 +13,9 @@ javac Seventeen.java
 
  2)All plugins are in plugins directory, and they have been compiled and packaged to jar.
   myInterface.jar includes: TFPrint,TFFreqs,TFWords interfaces
-  plugin1.jar includes: Words1, Freqs1, Print2
-  plugin2.jar includes: Words2, Freqs2, Print2
+  Words.jar includes: Words1,Words2
+  Print.jar includes: Print1,Print2
+  Freqs.jar includes: Freqs1,Freq
   For conveinence, I have deleted all the .class files, if you want to recompile all the things
   just run the compile.sh file in plugins directory
  
