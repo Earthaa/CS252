@@ -6,8 +6,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import static java.util.stream.Collectors.toMap;
 /*/
 *In this assignment, there are three ActiveWfObject objects,stop, storage,counter
-* I combine the WordFrequencyController and WordFrequencyManager together and called it
-doCounter
+* I combine the WordFrequencyController and WordFrequencyManager together and 
+name it doCounter
 */
 public class TwentyEight {
     public static void main(String[] args) throws InterruptedException {
@@ -19,7 +19,7 @@ public class TwentyEight {
         DataStorageManager storage = new DataStorageManager();
         Message msg2 = new Message();
         msg2.msg.addLast("init");
-        msg2.msg.addLast("../pride-and-prejudice.txt");
+        msg2.msg.addLast(args[0]);
         msg2.msg.addLast(stop);
         Sender.send(storage,msg2);
 
@@ -149,7 +149,7 @@ class stopWordManager extends ActiveWFObject{
         }
     }
 }
-
+//The combination of WordFrequencyManager and WordFrequencyController
 class DoCounter extends ActiveWFObject{
     Map<String,Integer>  wordFreqs;
     ActiveWFObject storageManager;
