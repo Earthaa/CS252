@@ -4,11 +4,7 @@ import java.io.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import static java.util.stream.Collectors.toMap;
-/*/
-*In this assignment, there are three ActiveWfObject objects,stop, storage,counter
-* I combine the WordFrequencyController and WordFrequencyManager together and called it
-doCounter
-*/
+
 public class TwentyEight {
     public static void main(String[] args) throws InterruptedException {
         stopWordManager stop = new stopWordManager();
@@ -58,7 +54,7 @@ abstract class ActiveWFObject extends Thread{
     abstract public void dispatch(Message message) throws Exception;
     public void run(){
         while(!this.stop) {
-            Message message = null;
+            Message message;
             try {
                 message = queue.take();
                 this.dispatch(message);
@@ -72,63 +68,86 @@ abstract class ActiveWFObject extends Thread{
 }
 
 class DataStorageManager extends ActiveWFObject{
-    ActiveWFObject stopWordManager;
-    String data;
-    public void init(Message message) throws FileNotFoundException {
-        String path_to_file =(String)message.msg.get(1);
-        this.stopWordManager = (ActiveWFObject)message.msg.get(2);
-        this.data = "";
-        File file = new File(path_to_file);
-        Scanner sc = new Scanner(file);
-        while(sc.hasNext())
-           data = data + sc.nextLine() + " ";
-        data = data.replaceAll("[^a-zA-Z]"," ").toLowerCase();
-    }
-    public void processWords(Message message) throws InterruptedException {
-        ActiveWFObject recipient = (ActiveWFObject) message.msg.get(1);
-        String[] afterSplit = this.data.split(" ");
-        for(int i = 0; i < afterSplit.length; i++){
-            if(!afterSplit[i].equals("")){
-                Message newMessage = new Message();
-                newMessage.msg.addLast("filter");
-                newMessage.msg.addLast(afterSplit[i]);
-                newMessage.msg.addLast(recipient);
-                Sender.send(stopWordManager,newMessage);
-            }
-        }
-        Message newMessage = new Message();
-        newMessage.msg.addLast("top25");
-        newMessage.msg.addLast(recipient);
-        Sender.send(stopWordManager,newMessage);
-    }
+    ActiveWFObject downStream;//stopWordManager
+    File file;
+    Scanner sc;
+    int count;
+    String[] words;
     @Override
     public void dispatch(Message message) throws Exception{
         if(message.msg.get(0) == "init") {
             this.init(message);
         }
-        else if(message.msg.get(0) == "send_word_freqs"){
-            processWords(message);
+        else if(message.msg.get(0) == "get_word"){
+            getWord(message);
         }
+        else if(message.msg.get(0) == "has_next")
+            hasNext();
         else
-            Sender.send(stopWordManager,message);
+            Sender.send(downStream,message);
+    }
+    public void hasNext() throws Exception {
+        boolean flag = sc.hasNext();
+        Message newMessage = new Message();
+        newMessage.msg.addLast("give_has_next");
+        newMessage.msg.addLast(flag);
+        Sender.send(downStream,newMessage);
+    }
+    public void init(Message message) throws FileNotFoundException {
+        String path_to_file =(String)message.msg.get(1);
+        this.downStream = (ActiveWFObject)message.msg.get(2);
+        file = new File(path_to_file);
+        sc = new Scanner(file);
+        count = 0;
+    }
+    public void getWord(Message message) throws InterruptedException {
+        if(count == 0 || count == words.length){
+            count = 0;
+            String str = sc.nextLine();
+            words = str.replaceAll("[^a-zA-Z]"," ").split(" ");
+        }
+        String word = words[count];
+        Message newMessage = new Message();
+        newMessage.msg.addLast("give_word");
+        newMessage.msg.addLast(word);
+        Sender.send(downStream,newMessage);
+        count++;
     }
 }
 class stopWordManager extends ActiveWFObject{
     HashSet<String> stopWords;
+    ActiveWFObject downStream;
+    ActiveWFObject upStream;
     @Override
     public void dispatch(Message message) throws Exception {
-        if(message.msg.getFirst() == "init"){
-            this.init();
-        }
-        else if(message.msg.getFirst() == "filter"){
-            this.filter(message);
-        }
-        else{
-            if(message.msg.get(0) != "die")
-            Sender.send((ActiveWFObject) message.msg.get(1),message);
-        }
+        if(message.msg.get(0) == "init")
+            this.init(message);
+        else if(message.msg.get(0) == "get_word")
+            getWord();
+        else if(message.msg.get(0) == "give_word")
+            giveWord(message);
+        else if(message.msg.get(0) == "has_next")
+            hasNext();
+        else if(message.msg.get(0) == "give_has_next")
+            giveHasNext(message);
+        else
+            Sender.send(downStream,message);
     }
-    public void init() throws FileNotFoundException {
+    public void hasNext() throws Exception{
+        Message newMessage = new Message();
+        newMessage.msg.addLast("has_next");
+        Sender.send(upStream,newMessage);
+    }
+    public void giveHasNext(Message message) throws Exception{
+        Message newMessage = new Message();
+        boolean flag = (boolean)message.msg.get(0);
+        newMessage.msg.addLast("give_has_next");
+        newMessage.msg.addLast(flag);
+        Sender.send(downStream,message);
+    }
+    public void init(Message message) throws FileNotFoundException {
+        downStream = (ActiveWFObject) message.msg.get(1);
+        upStream = (ActiveWFObject) message.msg.get(2);
         File file  = new File("../stop_words.txt");
         Scanner sc = new Scanner(file);
         stopWords = new HashSet<>();
@@ -136,44 +155,67 @@ class stopWordManager extends ActiveWFObject{
         for(String each:tmp)
             stopWords.add(each);
         stopWords.add("s");
+        stopWords.add("");
     }
-    public void filter(Message message) throws Exception{
-        String word = (String)message.msg.get(1);
-        ActiveWFObject recipient = (ActiveWFObject)message.msg.get(2);
-        if(!stopWords.contains(word))
-        {
-            Message newMessage = new Message();
-            newMessage.msg.addLast("word");
+    public void getWord() throws Exception{
+        Message newMessage = new Message();
+        newMessage.msg.addLast("get_word");
+        Sender.send(upStream,newMessage);
+    }
+    public void giveWord(Message message) throws Exception {
+        String word = (String) message.msg.get(1);
+        Message newMessage = new Message();
+        if(!stopWords.contains(word)) {
+            newMessage.msg.addLast("give_word");
             newMessage.msg.addLast(word);
-            Sender.send(recipient,newMessage);
+            Sender.send(downStream,newMessage);
+        }
+        else{
+            newMessage.msg.addLast("get_word");
+            Sender.send(upStream,newMessage);
         }
     }
 }
 
 class DoCounter extends ActiveWFObject{
     Map<String,Integer>  wordFreqs;
-    ActiveWFObject storageManager;
+    ActiveWFObject upStream;
+    boolean hasnext;
     @Override
-    public synchronized void dispatch(Message message) throws Exception{
-        if(message.msg.getFirst() == "word"){
-            incrementCount(message);
-        }
-        else if(message.msg.getFirst() == "top25"){
-            top25();
-        }
+    public void dispatch(Message message) throws Exception{
+        if(message.msg.getFirst() == "get_word")
+            getWord();
+        else if(message.msg.getFirst() == "has_next")
+            hasNext();
+        else if(message.msg.getFirst() == "give_word")
+            giveWord(message);
         else if(message.msg.getFirst() == "run"){
             doRun(message);
         }
         else
             throw new IllegalArgumentException("Invalide message");
     }
-    public void incrementCount(Message message){
+    public void hasNext() throws Exception{
+        Message newMessage = new Message();
+        newMessage.msg.addLast("has_next");
+        Sender.send(upStream,newMessage);
+    }
+    public void getWord() throws Exception{
+        Message newMessage = new Message();
+        newMessage.msg.addLast("get_word");
+        Sender.send(upStream,newMessage);
+    }
+    public void giveWord(Message message){
         String word = (String)message.msg.get(1);
         if(wordFreqs.containsKey(word))
             wordFreqs.put(word,wordFreqs.get(word)+1);
         else
             wordFreqs.put(word,1);
     }
+    public void giveHasNext(Message message){
+        this.hasnext = (boolean)message.msg.get(1);
+    }
+
     public void top25() throws Exception{
         HashMap<String, Integer> sortedMap = wordFreqs.entrySet()
                 .stream()
@@ -195,10 +237,10 @@ class DoCounter extends ActiveWFObject{
         this.stop = true;
     }
     public void doRun(Message message) throws Exception{
-        this.storageManager = (ActiveWFObject) message.msg.get(1);
+        this.upStream = (ActiveWFObject) message.msg.get(1);
         this.wordFreqs = new HashMap<>();
         Message newMessage = new Message();
-        newMessage.msg.addLast("send_word_freqs");
+        newMessage.msg.addLast("");
         newMessage.msg.addLast(this);
         Sender.send(storageManager,newMessage);
     }
